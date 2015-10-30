@@ -14,11 +14,13 @@ namespace GameServer
         left,
         right
     }
+
     public class Cookie
     {
         public int x, y;
         public directions direction;
     }
+
     public class Player
     {
         public string username;
@@ -32,6 +34,7 @@ namespace GameServer
             cookies = ck;
         }
     }
+
     public class Data
     {
         public List<Player> players;
@@ -43,73 +46,46 @@ namespace GameServer
             map = new bool 
         }*/
     }
+
     public class Server
     {
         private Socket _listeningSocket;
         private Thread _hostThread;
-        // private string _rootDirectory = "C:\\";
-        private string _portNumber = "80";
-        private int _port;
+        private int _port = 80;
+        private bool _isRunning;
 
-        public HTTPService(string[] args)
+        protected void Start()
         {
+            _isRunning = true;
+            _hostThread = new Thread(RunService);
+            _hostThread.Start();
         }
 
-        protected void OnStart(string[] args)
-        {
-            // Args
-            if (args.Count() > 0)
-            {
-                _rootDirectory = args[0];
-            }
-
-            if (args.Count() > 1)
-            {
-                _portNumber = args[1];
-            }
-
-            if (!int.TryParse(_portNumber, out _port))
-            {
-                // Default port 80
-                _port = 80;
-            }
-
-            if (Directory.Exists(_rootDirectory))
-            {
-
-                _hostThread = new Thread(RunHTTPService);
-                _hostThread.Start();
-            }
-            else
-            {
-                OnStop();
-            }
-        }
-
-        protected void OnStop()
+        protected void Stop()
         {
             _listeningSocket?.Close();
         }
 
-        private void RunHTTPService()
+        private void RunService()
         {
             // Run the service
             _listeningSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _listeningSocket.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), _port)); // Always localhost
             _listeningSocket.Listen(_port);
 
-            while (true)
+            while (_isRunning)
             {
-                /*WebRequest newWebRequest = new WebRequest(_listeningSocket.Accept())
-                {
-                    RootDirectory = _rootDirectory
-                };*/
-                HTTPService service = new HTTPService(null);
-                Thread thread = new Thread(() => service.OnStart(null));
-                thread.Start();
+                // I think that we should simply modify the UpdateManager class with the extra features a server would handle
+                // once the client-side gets figured out?
+
+                // Use modified client update manager here.
+                // UpdateManager.Something(_listeningSocket.Accept())
+                //Thread thread = new Thread(() => service.OnStart(null));
+                //thread.Start();
             }
         }
-        void Main()
+
+        public static void Main()
         {
 
         }
