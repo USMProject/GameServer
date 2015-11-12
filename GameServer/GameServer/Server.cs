@@ -24,8 +24,8 @@ namespace GameServer
 
     public class Data
     {
-        public bool dirty;
-        public bool[,] map;
+        //public bool dirty;
+        public int[,] map;
 
         public int GetMapSizeX()
         {
@@ -37,13 +37,24 @@ namespace GameServer
         }
         public Data(int sizeX, int sizeY)
         {
-            map = new bool[sizeX, sizeY];
+            Random random = new Random();
+            map = new int[sizeX, sizeY];
+            //Generate a random map
+            for(int x = 0; x < sizeX; x++)
+            {
+                for (int y = 0; y < sizeY; y++)
+                {
+                    if(random.Next(0, 101) < 5)
+                    {
+                        map[x, y] = -1;  
+                    }
+                    else
+                    {
+                        map[x, y] = 1;
+                    }
+                }
+            }
         }
-
-        /*public Data(string mapin)
-        {
-            map = new bool 
-        }*/
     }
 
     public class Server
@@ -51,28 +62,28 @@ namespace GameServer
         private Socket _listeningSocket;
         private int _port = 11000;
         public static Data gameState;
-        private List<Player> players;
-        private List<Cookie> cookies;
+        public static List<Player> players;
+        private static List<Cookie> cookies;
         private void MainThread()
         {
             while (true)
             {
-                if (gameState.dirty)
+                /*if (gameState.dirty)
                 {
                     string playersString = "";
                     foreach(Player pl in players)
                     {
-                        playersString += pl.x + "|" + pl.y + "|";
+                        playersString += pl.username + "|" + pl.x + "|" + pl.y + "|";
                     }
                     Update(playersString);
                     gameState.dirty = false;
-                }
+                }*/
             }
         }
         private void RunService()
         {
             players = new List<Player>();
-            gameState = new Data(12, 12);
+            gameState = new Data(64, 64);
 
             Thread mainThread = new Thread(MainThread);
             mainThread.Start();
@@ -93,11 +104,25 @@ namespace GameServer
                 thread.Start();
             }
         }
-        public void Update(string sent)
+        public static void SendMap()
+        {
+            for(int y = 0; y < gameState.GetMapSizeY(); y++)
+            {
+                string sent = "0, " + y + ", " + (gameState.GetMapSizeX()-1) + ", " + y + ", ";
+                for (int x = 0; x < gameState.GetMapSizeX(); x++)
+                {
+                    sent += gameState.map[x, y] + ", ";
+                }
+                sent = sent.Substring(0, sent.Length - 2);
+                Update(102, sent);
+            }
+            
+        }
+        public static void Update(int code, string sent)
         {
             foreach(Player player in players)
             {
-                player.SendUpdate(sent + "\r\n");
+                player.SendUpdate(code + " " + sent + "\r\n");
             }
         }
         public static void Main()

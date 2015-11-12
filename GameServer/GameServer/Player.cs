@@ -12,7 +12,7 @@ namespace GameServer
     {
         public string username;
         public int x, y;
-        public int cookies;
+        public int cookieCount;
 
         //May not need this
         //public Data GameData { get; set; } = new Data();
@@ -29,17 +29,23 @@ namespace GameServer
         {
             try
             {
+                
                 //NetworkStream stream = new NetworkStream(_incomingSocket);
                 StreamReader stream = new StreamReader(new NetworkStream(_incomingSocket));
-
+                bool loggedIn = false;
                 while (stream != null && !stream.EndOfStream)
                 {
                     // Parse the incoming data
                     string line = stream.ReadLine();
                     Console.WriteLine("Readin: " + line);
-                    Login(line);
-                    Move(line);
+                    if(!loggedIn)
+                    {
+                        loggedIn = true;
+                        Login(line);
+                        
+                    }
                     
+                    Move(line);
                 }
             }
             catch (Exception)
@@ -54,57 +60,104 @@ namespace GameServer
                 if (line.Length >= 6)
                 {
                     username = line.Substring(6, line.Length - 6);
+                    /*foreach (Player pl in Server.players.Where(n => n.username == username))
+                    {
+                        Server.Update(500, "Username already taken");
+                        return;
+                    }*/
+
+                    /*foreach (Player pl in Server.players)
+                    {
+                        if(pl.username == username)
+                        {
+                            Server.Update(500, "username already taken");
+                            return;
+                        }
+                    }*/
+                    Server.Update(200, Server.gameState.GetMapSizeX() + ", " + Server.gameState.GetMapSizeY());
                     Console.WriteLine("Logged in as: " + username);
+                }
+            }
+            Server.SendMap();
+            //Server.Update(102, "0, 0, 3, 3, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, -1, -1, -1, -1");
+
+            Random randomizer = new Random();
+            bool placed = false;
+            while (!placed)
+            {
+                int xPos = randomizer.Next(0, Server.gameState.GetMapSizeX());
+                int yPos = randomizer.Next(0, Server.gameState.GetMapSizeY());
+                if (CheckCollision(xPos, yPos))
+                {
+                    Server.Update(104, username + ", " + xPos + ", " + yPos + ", " + cookieCount);
+                    x = xPos;
+                    y = yPos;
+                    placed = true;
                 }
             }
         }
         public void Move(string line)
         {
-            if (line.StartsWith("MOVE "))
+            bool moved = false;
+            if (line.ToLower().StartsWith("move ") || line.ToLower().StartsWith("m "))
             {
-                Console.WriteLine("Movement");
-                if (line.Length == 6)
+                line = line.Substring(line.IndexOf(" ") + 1);
+                char moveDir = line[0];
+                if (moveDir == 'u')
                 {
-                    char moveDir = line[5];
-                    if (moveDir == 'u')
+                    if(CheckCollision(x, y+1))
                     {
                         y++;
                         y %= Server.gameState.GetMapSizeY();
-                        Console.WriteLine("Up");
+                        moved = true;
                     }
-                    else if (moveDir == 'd')
+                    
+
+                }
+                else if (moveDir == 'd')
+                {
+                    if (CheckCollision(x, y -1 ))
                     {
                         y--;
-                        if(y < 0)
-                            y = 11;
-                        Console.WriteLine("Down");
+                        if (y < 0)
+                            y = Server.gameState.GetMapSizeY() - 1;
+                        moved = true;
                     }
-                    else if (moveDir == 'l')
+                }
+                else if (moveDir == 'l')
+                {
+                    if (CheckCollision(x - 1, y))
                     {
                         x--;
                         if (x < 0)
-                            x = 11;
-                        x %= Server.gameState.GetMapSizeX();
-                        Console.WriteLine("Left");
+                            x = Server.gameState.GetMapSizeX()-1;
+                        moved = true;
                     }
-                    else if (moveDir == 'r')
+                }
+                else if (moveDir == 'r')
+                {
+                    if (CheckCollision(x + 1, y))
                     {
                         x++;
                         x %= Server.gameState.GetMapSizeX();
-                        Console.WriteLine("Right");
+                        moved = true;
                     }
-                    Server.gameState.dirty = true;
                 }
-                Console.WriteLine("Player " + username + " moved to x" + x + " y" + y);
             }
-            else
+            if(moved)
             {
-                InvalidCommand();
+                Server.Update(104, username + ", " + x + ", " + y + ", " + cookieCount);
             }
+            
+        }
+        bool CheckCollision(int x, int y)
+        {
+            if (x < 0) x = Server.gameState.GetMapSizeX() - 1;
+            if (y < 0) y = Server.gameState.GetMapSizeY() - 1;
+            return Server.gameState.map[x % (Server.gameState.GetMapSizeX()), y % (Server.gameState.GetMapSizeY())] >= 0;
         }
         public void SendUpdate(string sent)
         {
-            Console.WriteLine("Sending! " + sent);
             _incomingSocket.Send(Encoding.ASCII.GetBytes(sent));
         }
         public void InvalidCommand()
