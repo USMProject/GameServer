@@ -16,12 +16,6 @@ namespace GameServer
         right
     }
 
-    public class Cookie
-    {
-        public int x, y;
-        public directions direction;
-    }
-
     public class Data
     {
         //public bool dirty;
@@ -64,29 +58,15 @@ namespace GameServer
         public static Data gameState;
         public static List<Player> players;
         private static List<Cookie> cookies;
-        private void MainThread()
-        {
-            while (true)
-            {
-                /*if (gameState.dirty)
-                {
-                    string playersString = "";
-                    foreach(Player pl in players)
-                    {
-                        playersString += pl.username + "|" + pl.x + "|" + pl.y + "|";
-                    }
-                    Update(playersString);
-                    gameState.dirty = false;
-                }*/
-            }
-        }
+        public static int cookieSpeed;
+        public static float refreshRate;
+        private static int id;
+
         private void RunService()
         {
             players = new List<Player>();
+            cookies = new List<Cookie>();
             gameState = new Data(64, 64);
-
-            Thread mainThread = new Thread(MainThread);
-            mainThread.Start();
 
             string localHost = Environment.OSVersion.Platform == PlatformID.Unix ? "0.0.0.0" : "127.0.0.1";
 
@@ -119,6 +99,15 @@ namespace GameServer
                 Update(102, sent);
             }
             
+        }
+        public static int GetCookieID()
+        {
+            id++;
+            return id;
+        }
+        public static void AddCookie(int x, int y, directions dir, int id)
+        {
+            cookies.Add(new Cookie(id, x, y, dir));
         }
         public static void Update(int code, string sent)
         {

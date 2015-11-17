@@ -44,8 +44,8 @@ namespace GameServer
                         Login(line);
                         
                     }
-                    
                     Move(line);
+                    Throw(line);
                 }
             }
             catch (Exception)
@@ -93,6 +93,30 @@ namespace GameServer
                     x = xPos;
                     y = yPos;
                     placed = true;
+                }
+            }
+        }
+        public void Throw(string line)
+        {
+            if (line.ToLower().StartsWith("throw ") || line.ToLower().StartsWith("t "))
+            {
+                line = line.Substring(line.IndexOf(" ") + 1);
+                char throwDir = line[0];
+                if (throwDir == 'u')
+                {
+                   Server.AddCookie(x, y, directions.up, Server.GetCookieID());
+                }
+                else if (throwDir == 'd')
+                {
+                        Server.AddCookie(x, y, directions.down, Server.GetCookieID());
+                }
+                else if (throwDir == 'l')
+                {
+                        Server.AddCookie(x, y, directions.left, Server.GetCookieID());
+                }
+                else if (throwDir == 'r')
+                {
+                        Server.AddCookie(x, y, directions.right, Server.GetCookieID());
                 }
             }
         }
