@@ -11,6 +11,7 @@ namespace GameServer
         public int id;
         public int x, y;
         public directions direction;
+        public int ttl = 20;
 
         public Cookie(int idck, int xp, int yp, directions dir)
         {
@@ -23,23 +24,27 @@ namespace GameServer
             
         public void SendUpdate()
         {
-            string dirStr = "";
-            switch (direction)
+            if(ttl > 0)
             {
-                case directions.up:
-                    dirStr = "u";
-                    break;
-                case directions.down:
-                    dirStr = "d";
-                    break;
-                case directions.left:
-                    dirStr = "l";
-                    break;
-                case directions.right:
-                    dirStr = "r";
-                    break;
+                ttl--;
+                string dirStr = "";
+                switch (direction)
+                {
+                    case directions.up:
+                        dirStr = "u";
+                        break;
+                    case directions.down:
+                        dirStr = "d";
+                        break;
+                    case directions.left:
+                        dirStr = "l";
+                        break;
+                    case directions.right:
+                        dirStr = "r";
+                        break;
+                }
+                Server.Update(103, id + ", " + x + ", " + y + ", " + dirStr);
             }
-            Server.Update(103, id + ", " + x + ", " + y + ", " + dirStr);
         }
     }
 }

@@ -58,8 +58,7 @@ namespace GameServer
         public static Data gameState;
         public static List<Player> players;
         private static List<Cookie> cookies;
-        public static int cookieSpeed;
-        public static float refreshRate;
+        public const double cookieRefreshRate = 0.3;
         private static int id;
 
         private void RunService()
@@ -67,6 +66,8 @@ namespace GameServer
             players = new List<Player>();
             cookies = new List<Cookie>();
             gameState = new Data(64, 64);
+            //Create new thread for updating cookies
+            new Timer(CookieTick, null, TimeSpan.Zero, TimeSpan.FromSeconds(0.3));
 
             string localHost = Environment.OSVersion.Platform == PlatformID.Unix ? "0.0.0.0" : "127.0.0.1";
 
@@ -78,6 +79,8 @@ namespace GameServer
             //Debug info
             Console.WriteLine("Listening for connections on port " + _port + " and localhost IP: " + localHost);
 
+            
+            
             while (true)
             {
                 Player player = new Player(_listeningSocket.Accept());
@@ -115,6 +118,88 @@ namespace GameServer
             {
                 player.SendUpdate(code + " " + sent + "\r\n");
             }
+        }
+        
+
+        private void CookieTick(object obj)
+        {
+            Cookie delete = null;
+            foreach(Cookie ck in cookies)
+            {
+                switch (ck.direction)
+                {
+                    case directions.down:
+                        if (CheckCollision(ck.x, ck.y-1))
+                        {
+                            if (ck.y > 0)
+                                ck.y--;
+                            else
+                                ck.y = gameState.GetMapSizeY();
+                        }
+                        else
+                        {
+                            ck.ttl = 0;
+                        }
+                        break;
+                    case directions.up:
+                        if (CheckCollision(ck.x, ck.y+1))
+                        {
+                            if (ck.y < gameState.GetMapSizeY())
+                                ck.y++;
+                            else
+                                ck.y = 0;
+                        }
+                        else
+                        {
+                            ck.ttl = 0;
+                        }
+                        break;
+                    case directions.left:
+                        if (CheckCollision(ck.x - 1, ck.y))
+                        {
+                            if (ck.x > 0)
+                                ck.x--;
+                            else
+                                ck.x = gameState.GetMapSizeY();
+                        }
+                        else
+                        {
+                            ck.ttl = 0;
+                        }
+                        break;
+                    case directions.right:
+                        if (CheckCollision(ck.x + 1, ck.y))
+                        {
+                            if (ck.x < gameState.GetMapSizeX())
+                                ck.x++;
+                            else
+                                ck.x = 0;
+                        }
+                        else
+                        {
+                            ck.ttl = 0;
+                        }
+                        break;
+                }
+                ck.SendUpdate();
+                if(ck.ttl == 0)
+                {
+                    delete = ck;
+                }
+            }
+            if(delete != null)
+            {
+                cookies.Remove(delete);
+            }
+        }
+        bool CheckCollision(int x, int y)
+        {
+            if (x < 0) x = Server.gameState.GetMapSizeX() - 1;
+            if (y < 0) y = Server.gameState.GetMapSizeY() - 1;
+            return Server.gameState.map[x % (Server.gameState.GetMapSizeX()), y % (Server.gameState.GetMapSizeY())] >= 0;
+        }
+        void DeleteCookies()
+        {
         }
         public static void Main()
         {
