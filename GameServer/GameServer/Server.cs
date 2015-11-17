@@ -88,13 +88,15 @@ namespace GameServer
             Thread mainThread = new Thread(MainThread);
             mainThread.Start();
 
+            string localHost = Environment.OSVersion.Platform == PlatformID.Unix ? "0.0.0.0" : "127.0.0.1";
+
             // Run the service
             _listeningSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            _listeningSocket.Bind(new IPEndPoint(IPAddress.Parse("127.0.0.1"), _port)); // Always localhost
+            _listeningSocket.Bind(new IPEndPoint(IPAddress.Parse(localHost), _port)); // Always localhost
             _listeningSocket.Listen(_port);
 
             //Debug info
-            Console.WriteLine("Listening for connections on port " + _port);
+            Console.WriteLine("Listening for connections on port " + _port + " and localhost IP: " + localHost);
 
             while (true)
             {
