@@ -104,19 +104,19 @@ namespace GameServer
                 char throwDir = line[0];
                 if (throwDir == 'u')
                 {
-                   Server.AddCookie(x, y, directions.up, Server.GetCookieID());
+                   Server.AddCookie(x, y, directions.up, Server.GetCookieID(), username);
                 }
                 else if (throwDir == 'd')
                 {
-                        Server.AddCookie(x, y, directions.down, Server.GetCookieID());
+                        Server.AddCookie(x, y, directions.down, Server.GetCookieID(), username);
                 }
                 else if (throwDir == 'l')
                 {
-                        Server.AddCookie(x, y, directions.left, Server.GetCookieID());
+                        Server.AddCookie(x, y, directions.left, Server.GetCookieID(), username);
                 }
                 else if (throwDir == 'r')
                 {
-                        Server.AddCookie(x, y, directions.right, Server.GetCookieID());
+                        Server.AddCookie(x, y, directions.right, Server.GetCookieID(), username);
                 }
             }
         }

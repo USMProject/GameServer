@@ -108,9 +108,9 @@ namespace GameServer
             id++;
             return id;
         }
-        public static void AddCookie(int x, int y, directions dir, int id)
+        public static void AddCookie(int x, int y, directions dir, int id, string throwerName)
         {
-            cookies.Add(new Cookie(id, x, y, dir));
+            cookies.Add(new Cookie(id, x, y, dir, throwerName));
         }
         public static void Update(int code, string sent)
         {
@@ -181,10 +181,26 @@ namespace GameServer
                         }
                         break;
                 }
-                ck.SendUpdate();
-                if(ck.ttl == 0)
+                // Check if hits a player
+                string decrPlayersCookies = string.Empty;
+                foreach (Player pl in players)
                 {
-                    delete = ck;
+                    if (ck.x == pl.x && ck.y == pl.y)
+                    {
+                        // Saving the username to eliminate messing up the players iteration...?
+                        decrPlayersCookies = pl.username;
+                    }
+                }
+                if(decrPlayersCookies == string.Empty)
+                    ck.SendUpdate();
+                    if (ck.ttl == 0)
+                    {
+                        delete = ck;
+                    }
+                else
+                {
+                    DecrementCookieCount(ck.thrower);
+                    //delete = ck;
                 }
             }
             if(delete != null)
@@ -198,8 +214,18 @@ namespace GameServer
             if (y < 0) y = Server.gameState.GetMapSizeY() - 1;
             return Server.gameState.map[x % (Server.gameState.GetMapSizeX()), y % (Server.gameState.GetMapSizeY())] >= 0;
         }
-        void DeleteCookies()
+        private static void DecrementCookieCount(string username)
         {
+            Player pl = players.Find(x => x.username.Equals(username));
+            pl.cookieCount--;
+            if (pl.cookieCount <= 0)
+            {
+                /// YOU WIN!!!
+                Update(100, pl.username + " won this game!");
+
+                // Reset the game....
+                Thread.Sleep(2000);
+            }
         }
         public static void Main()
         {

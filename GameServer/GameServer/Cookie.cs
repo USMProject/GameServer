@@ -12,13 +12,15 @@ namespace GameServer
         public int x, y;
         public directions direction;
         public int ttl = 20;
+        public string thrower;
 
-        public Cookie(int idck, int xp, int yp, directions dir)
+        public Cookie(int idck, int xp, int yp, directions dir, string throwerName)
         {
             id = idck;
             x = xp;
             y = yp;
             direction = dir;
+            thrower = throwerName;
             SendUpdate();
         }
             
