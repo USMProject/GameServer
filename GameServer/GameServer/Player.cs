@@ -89,6 +89,7 @@ namespace GameServer
                 int yPos = randomizer.Next(0, Server.gameState.GetMapSizeY());
                 if (CheckCollision(xPos, yPos))
                 {
+                    cookieCount = 20;
                     Server.Update(104, username + ", " + xPos + ", " + yPos + ", " + cookieCount);
                     x = xPos;
                     y = yPos;
