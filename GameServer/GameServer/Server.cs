@@ -185,23 +185,26 @@ namespace GameServer
                 string decrPlayersCookies = string.Empty;
                 foreach (Player pl in players)
                 {
-                    if (ck.x == pl.x && ck.y == pl.y)
+                    if (ck.x == pl.x && ck.y == pl.y && ck.thrower != pl.username)
                     {
                         // Saving the username to eliminate messing up the players iteration...?
                         decrPlayersCookies = pl.username;
                     }
                 }
-                if(decrPlayersCookies == string.Empty)
+                if (decrPlayersCookies == string.Empty)
+                {
                     ck.SendUpdate();
                     if (ck.ttl == 0)
                     {
                         delete = ck;
                     }
+                }
                 else
                 {
                     DecrementCookieCount(ck.thrower);
                     //delete = ck;
                 }
+
             }
             if(delete != null)
             {
@@ -224,7 +227,7 @@ namespace GameServer
                 Update(100, pl.username + " won this game!");
 
                 // Reset the game....
-                Thread.Sleep(2000);
+                //Thread.Sleep(2000);
             }
         }
         public static void Main()
