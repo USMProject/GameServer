@@ -202,7 +202,7 @@ namespace GameServer
                 else
                 {
                     DecrementCookieCount(ck.thrower);
-                    //delete = ck;
+                    delete = ck;
                 }
 
             }
