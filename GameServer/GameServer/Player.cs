@@ -1,4 +1,9 @@
-﻿using System;
+﻿//COS 460 Computer Networks
+//Toss Your Cookies Server
+//Pavel Gorelov and Samuel Capotosto
+//Player.cs
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -13,9 +18,6 @@ namespace GameServer
         public string username;
         public int x, y;
         public int cookieCount;
-
-        //May not need this
-        //public Data GameData { get; set; } = new Data();
 
         Socket _incomingSocket;
 
@@ -46,6 +48,7 @@ namespace GameServer
                     }
                     Move(line);
                     Throw(line);
+                    Message(line);
                 }
             }
             catch (Exception)
@@ -55,31 +58,18 @@ namespace GameServer
         }
         public void Login(string line)
         {
-            if (line.StartsWith("LOGIN "))
+            if (line.ToLower().StartsWith("login "))
             {
                 if (line.Length >= 6)
                 {
                     username = line.Substring(6, line.Length - 6);
-                    /*foreach (Player pl in Server.players.Where(n => n.username == username))
-                    {
-                        Server.Update(500, "Username already taken");
-                        return;
-                    }*/
-
-                    /*foreach (Player pl in Server.players)
-                    {
-                        if(pl.username == username)
-                        {
-                            Server.Update(500, "username already taken");
-                            return;
-                        }
-                    }*/
                     Server.Update(200, Server.gameState.GetMapSizeX() + ", " + Server.gameState.GetMapSizeY());
                     Console.WriteLine("Logged in as: " + username);
+                    
                 }
             }
-            Server.SendMap();
-            //Server.Update(102, "0, 0, 3, 3, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, -1, -1, -1, -1");
+
+            Server.SendMap(username);
 
             Random randomizer = new Random();
             bool placed = false;
@@ -96,28 +86,37 @@ namespace GameServer
                     placed = true;
                 }
             }
+
+        }
+        public void Message(string line)
+        {
+            if (line.ToLower().StartsWith("msg "))
+            {
+                string player = line.Split(' ')[1];
+                string message = line.Substring(4 + player.Length + 1);
+                Server.SendMessage(player, message);
+            }
         }
         public void Throw(string line)
         {
             if (line.ToLower().StartsWith("throw ") || line.ToLower().StartsWith("t "))
             {
                 line = line.Substring(line.IndexOf(" ") + 1);
-                char throwDir = line[0];
-                if (throwDir == 'u')
+                if (line.StartsWith("u") || line.StartsWith("up"))
                 {
-                   Server.AddCookie(x, y, directions.up, Server.GetCookieID(), username);
+                    Server.AddCookie(x, y, directions.up, Server.GetCookieID(), username);
                 }
-                else if (throwDir == 'd')
+                else if (line.StartsWith("d") || line.StartsWith("down"))
                 {
-                        Server.AddCookie(x, y, directions.down, Server.GetCookieID(), username);
+                    Server.AddCookie(x, y, directions.down, Server.GetCookieID(), username);
                 }
-                else if (throwDir == 'l')
+                else if (line.StartsWith("l") || line.StartsWith("left"))
                 {
-                        Server.AddCookie(x, y, directions.left, Server.GetCookieID(), username);
+                    Server.AddCookie(x, y, directions.left, Server.GetCookieID(), username);
                 }
-                else if (throwDir == 'r')
+                else if (line.StartsWith("r") || line.StartsWith("right"))
                 {
-                        Server.AddCookie(x, y, directions.right, Server.GetCookieID(), username);
+                    Server.AddCookie(x, y, directions.right, Server.GetCookieID(), username);
                 }
             }
         }
@@ -127,8 +126,7 @@ namespace GameServer
             if (line.ToLower().StartsWith("move ") || line.ToLower().StartsWith("m "))
             {
                 line = line.Substring(line.IndexOf(" ") + 1);
-                char moveDir = line[0];
-                if (moveDir == 'u')
+                if (line.StartsWith("u") || line.StartsWith("up"))
                 {
                     if(CheckCollision(x, y+1))
                     {
@@ -139,7 +137,7 @@ namespace GameServer
                     
 
                 }
-                else if (moveDir == 'd')
+                else if (line.StartsWith("d") || line.StartsWith("down"))
                 {
                     if (CheckCollision(x, y -1 ))
                     {
@@ -149,7 +147,7 @@ namespace GameServer
                         moved = true;
                     }
                 }
-                else if (moveDir == 'l')
+                else if (line.StartsWith("l") || line.StartsWith("left"))
                 {
                     if (CheckCollision(x - 1, y))
                     {
@@ -159,7 +157,7 @@ namespace GameServer
                         moved = true;
                     }
                 }
-                else if (moveDir == 'r')
+                else if (line.StartsWith("r") || line.StartsWith("right"))
                 {
                     if (CheckCollision(x + 1, y))
                     {

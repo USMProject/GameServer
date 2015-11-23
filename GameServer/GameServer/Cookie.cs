@@ -1,4 +1,9 @@
-﻿using System;
+﻿//COS 460 Computer Networks
+//Toss Your Cookies Server
+//Pavel Gorelov and Samuel Capotosto
+//Cookie.cs
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;

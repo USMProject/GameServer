@@ -1,4 +1,9 @@
-﻿using System.Collections.Generic;
+﻿//COS 460 Computer Networks
+//Toss Your Cookies Server
+//Pavel Gorelov and Samuel Capotosto
+//Server.cs
+
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -18,7 +23,6 @@ namespace GameServer
 
     public class Data
     {
-        //public bool dirty;
         public int[,] map;
 
         public int GetMapSizeX()
@@ -89,7 +93,7 @@ namespace GameServer
                 thread.Start();
             }
         }
-        public static void SendMap()
+        public static void SendMap(string player)
         {
             for(int y = 0; y < gameState.GetMapSizeY(); y++)
             {
@@ -99,7 +103,7 @@ namespace GameServer
                     sent += gameState.map[x, y] + ", ";
                 }
                 sent = sent.Substring(0, sent.Length - 2);
-                Update(102, sent);
+                Update(102, sent, player);
             }
             
         }
@@ -119,7 +123,17 @@ namespace GameServer
                 player.SendUpdate(code + " " + sent + "\r\n");
             }
         }
-        
+        public static void Update(int code, string sent, string sendTo)
+        {
+            foreach (Player player in players)
+            {
+                if(player.username == sendTo)
+                {
+                    player.SendUpdate(code + " " + sent + "\r\n");
+                    return;
+                }
+            }
+        }
 
         private void CookieTick(object obj)
         {
@@ -225,7 +239,6 @@ namespace GameServer
             {
                 /// YOU WIN!!!
                 Update(100, pl.username + " won this game!");
-
                 // Reset the game....
                 //Thread.Sleep(2000);
             }
@@ -234,6 +247,18 @@ namespace GameServer
         {
             Server server = new Server();
             server.RunService();
+        }
+        public static void SendMessage(string sendTo, string message)
+        {
+            Console.WriteLine("'" + sendTo + "'   '" + message + "'");
+            if(sendTo == "all")
+            {
+                Update(500, message);
+            }
+            else
+            {
+                Update(500, message, sendTo);
+            }
         }
     }
 }
