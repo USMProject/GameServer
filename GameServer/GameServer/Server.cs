@@ -88,7 +88,7 @@ namespace GameServer
         public static Data gameState;
         public static List<Player> players;
         private static List<Cookie> cookies;
-        public const double cookieRefreshRate = 0.3;
+        public const double cookieRefreshRate = 0.1;
         private static int id;
 
         // Servers most important running method
@@ -259,6 +259,8 @@ namespace GameServer
                     {
                         // Saving the username
                         decrPlayersCookies = pl.username;
+                        ck.ttl = 0;
+                        Update(105, delete.id + ", " + delete.x + ", " + delete.y + ", " + pl.username);
                     }
                 }
 
@@ -282,6 +284,7 @@ namespace GameServer
             if(delete != null)
             {
                 cookies.Remove(delete);
+                Update(105, delete.id + ", " + delete.x + ", " + delete.y + ", -1");
             }
         }
 

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GameServer
@@ -35,20 +36,32 @@ namespace GameServer
             _incomingSocket = incomingSocket;
         }
 
+        void CheckConnection()
+        {
+            while(_incomingSocket.Connected)
+            {
+            }
+            //Console.WriteLine("Player disconnected");
+        }
         /// <summary>
         /// Run the incoming stream
         /// </summary>
         public void Run()
         {
+            Thread thread = new Thread(() => CheckConnection());
+            thread.Start();
             try
             {
                 //NetworkStream stream = new NetworkStream(_incomingSocket);
-                StreamReader stream = new StreamReader(new NetworkStream(_incomingSocket));
+                NetworkStream ns = new NetworkStream(_incomingSocket);
+                StreamReader stream = new StreamReader(ns);
                 bool loggedIn = false;
-                while (stream != null && !stream.EndOfStream)
+                string line = "";
+                while (stream != null && !stream.EndOfStream && _incomingSocket.Connected)
                 {
                     // Parse the incoming data
-                    string line = stream.ReadLine();
+                    line = stream.ReadLine();
+                    
                     Console.WriteLine("Readin: " + line);
                     if(!loggedIn)
                     {
@@ -58,12 +71,16 @@ namespace GameServer
                     Move(line);
                     Throw(line);
                     Message(line);
+                    
                 }
             }
             catch (Exception)
             {
                 // Tell the player there's a network issue.
             }
+            Console.WriteLine("Player disconnected");
+            Server.Update(104, username + ", -1, -1, -1");
+
         }
 
         /// <summary>
