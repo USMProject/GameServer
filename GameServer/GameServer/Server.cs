@@ -13,6 +13,9 @@ using System;
 
 namespace GameServer
 {
+    /// <summary>
+    /// Directions enum
+    /// </summary>
     public enum directions
     {
         up,
@@ -21,27 +24,46 @@ namespace GameServer
         right
     }
 
+    /// <summary>
+    /// Data class to hold the map
+    /// </summary>
     public class Data
     {
+        /// <summary>
+        /// Map array of ints
+        /// </summary>
         public int[,] map;
 
+        /// <summary>
+        /// Map size X
+        /// </summary>
         public int GetMapSizeX()
         {
             return map.GetLength(0);
         }
+
+        /// <summary>
+        /// Map size Y
+        /// </summary>
         public int GetMapSizeY()
         {
             return map.GetLength(1);
         }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
         public Data(int sizeX, int sizeY)
         {
             Random random = new Random();
             map = new int[sizeX, sizeY];
+
             //Generate a random map
             for(int x = 0; x < sizeX; x++)
             {
                 for (int y = 0; y < sizeY; y++)
                 {
+                    // 5% populated
                     if(random.Next(0, 101) < 5)
                     {
                         map[x, y] = -1;  
@@ -55,8 +77,12 @@ namespace GameServer
         }
     }
 
+    /// <summary>
+    /// Server class to manage activities
+    /// </summary>
     public class Server
     {
+        // Verver variables
         private Socket _listeningSocket;
         private int _port = 11000;
         public static Data gameState;
@@ -65,26 +91,29 @@ namespace GameServer
         public const double cookieRefreshRate = 0.3;
         private static int id;
 
+        // Servers most important running method
         private void RunService()
         {
+            // Important variable instantiation
             players = new List<Player>();
             cookies = new List<Cookie>();
             gameState = new Data(64, 64);
+
             //Create new thread for updating cookies
             new Timer(CookieTick, null, TimeSpan.Zero, TimeSpan.FromSeconds(0.3));
 
+            // Windows or Unix localhost
             string localHost = Environment.OSVersion.Platform == PlatformID.Unix ? "0.0.0.0" : "127.0.0.1";
 
-            // Run the service
+            // Setup the TCP socket
             _listeningSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             _listeningSocket.Bind(new IPEndPoint(IPAddress.Parse(localHost), _port)); // Always localhost
             _listeningSocket.Listen(_port);
 
             //Debug info
             Console.WriteLine("Listening for connections on port " + _port + " and localhost IP: " + localHost);
-
             
-            
+            // Socket listening loop
             while (true)
             {
                 Player player = new Player(_listeningSocket.Accept());
@@ -93,8 +122,13 @@ namespace GameServer
                 thread.Start();
             }
         }
+
+        /// <summary>
+        /// Send the map to specific player
+        /// </summary>
         public static void SendMap(string player)
         {
+            // Send one row at a time
             for(int y = 0; y < gameState.GetMapSizeY(); y++)
             {
                 string sent = "0, " + y + ", " + (gameState.GetMapSizeX()-1) + ", " + y + ", ";
@@ -105,17 +139,29 @@ namespace GameServer
                 sent = sent.Substring(0, sent.Length - 2);
                 Update(102, sent, player);
             }
-            
         }
+
+        /// <summary>
+        /// Get and increment a cookie id
+        /// </summary>
+        /// <returns></returns>
         public static int GetCookieID()
         {
             id++;
             return id;
         }
+
+        /// <summary>
+        /// Add a cookie to the jar
+        /// </summary>
         public static void AddCookie(int x, int y, directions dir, int id, string throwerName)
         {
             cookies.Add(new Cookie(id, x, y, dir, throwerName));
         }
+
+        /// <summary>
+        /// Update each player with a global game update
+        /// </summary>
         public static void Update(int code, string sent)
         {
             foreach(Player player in players)
@@ -123,6 +169,10 @@ namespace GameServer
                 player.SendUpdate(code + " " + sent + "\r\n");
             }
         }
+
+        /// <summary>
+        /// Specific user messaging or update
+        /// </summary>
         public static void Update(int code, string sent, string sendTo)
         {
             foreach (Player player in players)
@@ -135,6 +185,9 @@ namespace GameServer
             }
         }
 
+        /// <summary>
+        /// Update the cookies using an interval
+        /// </summary>
         private void CookieTick(object obj)
         {
             Cookie delete = null;
@@ -142,6 +195,7 @@ namespace GameServer
             {
                 switch (ck.direction)
                 {
+                    // Check for wall collisions
                     case directions.down:
                         if (CheckCollision(ck.x, ck.y-1))
                         {
@@ -152,6 +206,7 @@ namespace GameServer
                         }
                         else
                         {
+                            // Time to live is out
                             ck.ttl = 0;
                         }
                         break;
@@ -195,16 +250,19 @@ namespace GameServer
                         }
                         break;
                 }
-                // Check if hits a player
+
+                // Check if cookie hits a player
                 string decrPlayersCookies = string.Empty;
                 foreach (Player pl in players)
                 {
                     if (ck.x == pl.x && ck.y == pl.y && ck.thrower != pl.username)
                     {
-                        // Saving the username to eliminate messing up the players iteration...?
+                        // Saving the username
                         decrPlayersCookies = pl.username;
                     }
                 }
+
+                // Update the cookie or delete it
                 if (decrPlayersCookies == string.Empty)
                 {
                     ck.SendUpdate();
@@ -218,36 +276,52 @@ namespace GameServer
                     DecrementCookieCount(ck.thrower);
                     delete = ck;
                 }
-
             }
+
+            // Delete the cookie if needed
             if(delete != null)
             {
                 cookies.Remove(delete);
             }
         }
+
+        /// <summary>
+        /// Check for wall collision
+        /// </summary>
         bool CheckCollision(int x, int y)
         {
-            if (x < 0) x = Server.gameState.GetMapSizeX() - 1;
-            if (y < 0) y = Server.gameState.GetMapSizeY() - 1;
-            return Server.gameState.map[x % (Server.gameState.GetMapSizeX()), y % (Server.gameState.GetMapSizeY())] >= 0;
+            if (x < 0) x = gameState.GetMapSizeX() - 1;
+            if (y < 0) y = gameState.GetMapSizeY() - 1;
+            return gameState.map[x % (gameState.GetMapSizeX()), y % (gameState.GetMapSizeY())] >= 0;
         }
+
+        /// <summary>
+        /// Decrement cookie count of a player and check if a winner
+        /// </summary>
         private static void DecrementCookieCount(string username)
         {
             Player pl = players.Find(x => x.username.Equals(username));
             pl.cookieCount--;
             if (pl.cookieCount <= 0)
             {
-                /// YOU WIN!!!
                 Update(100, pl.username + " won this game!");
                 // Reset the game....
                 //Thread.Sleep(2000);
             }
         }
+
+        /// <summary>
+        /// Main method
+        /// </summary>
         public static void Main()
         {
             Server server = new Server();
             server.RunService();
         }
+
+        /// <summary>
+        /// Messaging system
+        /// </summary>
         public static void SendMessage(string sendTo, string message)
         {
             Console.WriteLine("'" + sendTo + "'   '" + message + "'");

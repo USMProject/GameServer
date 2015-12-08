@@ -11,14 +11,21 @@ using System.Threading.Tasks;
 
 namespace GameServer
 {
+    /// <summary>
+    /// Cookie class
+    /// </summary>
     class Cookie
     {
+        // Local variables
         public int id;
         public int x, y;
         public directions direction;
         public int ttl = 20;
         public string thrower;
 
+        /// <summary>
+        /// Cookie constructor
+        /// </summary>
         public Cookie(int idck, int xp, int yp, directions dir, string throwerName)
         {
             id = idck;
@@ -28,9 +35,13 @@ namespace GameServer
             thrower = throwerName;
             SendUpdate();
         }
-            
+        
+        /// <summary>
+        /// Send this cookies updated info
+        /// </summary>
         public void SendUpdate()
         {
+            // Check time to live
             if(ttl > 0)
             {
                 ttl--;

@@ -13,25 +13,35 @@ using System.Threading.Tasks;
 
 namespace GameServer
 {
+    /// <summary>
+    /// Player object
+    /// </summary>
     public class Player
     {
+        // Local variables
         public string username;
         public int x, y;
         public int cookieCount;
 
+        // Players communication socket
         Socket _incomingSocket;
 
+        /// <summary>
+        /// Player constructor
+        /// </summary>
         public Player(Socket incomingSocket)
         {
             Console.WriteLine("Connected!");
             _incomingSocket = incomingSocket;
         }
 
+        /// <summary>
+        /// Run the incoming stream
+        /// </summary>
         public void Run()
         {
             try
             {
-                
                 //NetworkStream stream = new NetworkStream(_incomingSocket);
                 StreamReader stream = new StreamReader(new NetworkStream(_incomingSocket));
                 bool loggedIn = false;
@@ -44,7 +54,6 @@ namespace GameServer
                     {
                         loggedIn = true;
                         Login(line);
-                        
                     }
                     Move(line);
                     Throw(line);
@@ -56,6 +65,10 @@ namespace GameServer
                 // Tell the player there's a network issue.
             }
         }
+
+        /// <summary>
+        /// Parse the login sting
+        /// </summary>
         public void Login(string line)
         {
             if (line.ToLower().StartsWith("login "))
@@ -65,12 +78,13 @@ namespace GameServer
                     username = line.Substring(6, line.Length - 6);
                     Server.Update(200, Server.gameState.GetMapSizeX() + ", " + Server.gameState.GetMapSizeY());
                     Console.WriteLine("Logged in as: " + username);
-                    
                 }
             }
 
+            // Send the map
             Server.SendMap(username);
 
+            // Spawn the player to a random part of the map
             Random randomizer = new Random();
             bool placed = false;
             while (!placed)
@@ -79,6 +93,7 @@ namespace GameServer
                 int yPos = randomizer.Next(0, Server.gameState.GetMapSizeY());
                 if (CheckCollision(xPos, yPos))
                 {
+                    // Initialize the player
                     cookieCount = 20;
                     Server.Update(104, username + ", " + xPos + ", " + yPos + ", " + cookieCount);
                     x = xPos;
@@ -88,6 +103,10 @@ namespace GameServer
             }
 
         }
+
+        /// <summary>
+        /// Parse a message protocol input
+        /// </summary>
         public void Message(string line)
         {
             if (line.ToLower().StartsWith("msg "))
@@ -97,6 +116,10 @@ namespace GameServer
                 Server.SendMessage(player, message);
             }
         }
+
+        /// <summary>
+        /// Parse an incoming throw from a client
+        /// </summary>
         public void Throw(string line)
         {
             if (line.ToLower().StartsWith("throw ") || line.ToLower().StartsWith("t "))
@@ -120,6 +143,10 @@ namespace GameServer
                 }
             }
         }
+
+        /// <summary>
+        /// Parse an incoming move command
+        /// </summary>
         public void Move(string line)
         {
             bool moved = false;
@@ -128,14 +155,13 @@ namespace GameServer
                 line = line.Substring(line.IndexOf(" ") + 1);
                 if (line.StartsWith("u") || line.StartsWith("up"))
                 {
+                    // Change this player's location
                     if(CheckCollision(x, y+1))
                     {
                         y++;
                         y %= Server.gameState.GetMapSizeY();
                         moved = true;
                     }
-                    
-
                 }
                 else if (line.StartsWith("d") || line.StartsWith("down"))
                 {
@@ -167,25 +193,31 @@ namespace GameServer
                     }
                 }
             }
+
+            // Update the other clients
             if(moved)
             {
                 Server.Update(104, username + ", " + x + ", " + y + ", " + cookieCount);
             }
             
         }
+
+        /// <summary>
+        /// Check for wall collision
+        /// </summary>
         bool CheckCollision(int x, int y)
         {
             if (x < 0) x = Server.gameState.GetMapSizeX() - 1;
             if (y < 0) y = Server.gameState.GetMapSizeY() - 1;
             return Server.gameState.map[x % (Server.gameState.GetMapSizeX()), y % (Server.gameState.GetMapSizeY())] >= 0;
         }
+
+        /// <summary>
+        /// Send ASCII update to this player's client
+        /// </summary>
         public void SendUpdate(string sent)
         {
             _incomingSocket.Send(Encoding.ASCII.GetBytes(sent));
-        }
-        public void InvalidCommand()
-        {
-            Console.WriteLine("Invalid Command!");
         }
     }
 }
